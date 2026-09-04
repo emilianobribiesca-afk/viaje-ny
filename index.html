@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Nueva York · 16–20 sep</title>
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NY 2026">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#6b6b6b; --line:#e6e6e6;
+    --bg:#faf8f5; --card:#ffffff; --accent:#c8102e; --accent2:#0b3d6b;
+    --chip:#f0ede8; --ok:#2e6b3e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45;
+    -webkit-font-smoothing:antialiased; padding-bottom:40px;
+  }
+  header{background:var(--ink); color:#fff; padding:22px 20px 14px; position:sticky; top:0; z-index:5}
+  header .kick{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:#c9c9c9}
+  header h1{font-size:26px; font-weight:800; margin:4px 0 2px; letter-spacing:-.5px}
+  header .sub{font-size:13.5px; color:#bdbdbd}
+  header .countdown{
+    margin-top:12px; background:rgba(255,255,255,.08); border-radius:12px;
+    padding:10px 14px; display:flex; justify-content:space-between; align-items:center;
+  }
+  header .countdown .n{font-size:22px; font-weight:800; color:#fff}
+  header .countdown .lbl{font-size:11px; color:#bdbdbd; text-transform:uppercase; letter-spacing:.08em}
+  .wrap{max-width:640px; margin:0 auto; padding:0 14px}
+
+  .progress-global{background:rgba(255,255,255,.15); height:4px; border-radius:2px; margin-top:10px; overflow:hidden}
+  .progress-global i{display:block; height:100%; background:var(--accent); width:0%; transition:width .3s}
+
+  .facts{background:var(--card); border:1px solid var(--line); border-radius:14px; margin:16px 0; padding:14px 16px}
+  .facts h2{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .frow{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px}
+  .frow:last-child{border-bottom:none}
+  .frow b{font-weight:600}
+  .frow span{color:var(--muted); text-align:right}
+
+  .tabs{display:flex; gap:6px; overflow-x:auto; padding:10px 0 4px; -webkit-overflow-scrolling:touch; position:sticky; top:150px; background:var(--bg); z-index:4}
+  .tabs button{
+    flex:0 0 auto; border:none; font-size:13px; font-weight:700; cursor:pointer;
+    background:var(--chip); color:var(--ink); padding:9px 14px; border-radius:20px; white-space:nowrap;
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+  }
+  .tabs button .wx{font-size:10px; font-weight:600; color:var(--muted)}
+  .tabs button.active{background:var(--accent); color:#fff}
+  .tabs button.active .wx{color:#fde8ec}
+  .tabs button .badge{font-size:9.5px}
+
+  .pane{display:none}
+  .pane.active{display:block}
+
+  .day{background:var(--card); border:1px solid var(--line); border-radius:16px; margin:14px 0; overflow:hidden}
+  .day-h{padding:15px 17px 12px; border-bottom:1px solid var(--line)}
+  .day-h .d{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; display:flex; justify-content:space-between; align-items:center}
+  .day-h .wx-full{font-size:12px; color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0}
+  .day-h h3{font-size:19px; font-weight:800; margin-top:2px; letter-spacing:-.3px}
+  .day-h .note{font-size:13px; color:var(--muted); margin-top:4px}
+  .day-h .bar{height:4px; background:var(--line); border-radius:2px; margin-top:10px; overflow:hidden}
+  .day-h .bar i{display:block; height:100%; background:var(--ok); width:0%; transition:width .3s}
+
+  .stop{display:flex; gap:10px; padding:12px 17px; border-bottom:1px solid #f2f0ec; align-items:flex-start}
+  .stop:last-child{border-bottom:none}
+  .stop.done{opacity:.45}
+  .stop.done .t{text-decoration:line-through}
+  .chk{flex:0 0 20px; width:20px; height:20px; margin-top:2px; border-radius:6px; border:2px solid var(--line);
+       background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff}
+  .chk.on{background:var(--ok); border-color:var(--ok)}
+  .time{flex:0 0 58px; font-size:13px; font-weight:700; color:var(--accent2); padding-top:1px}
+  .body{flex:1; min-width:0}
+  .body .t{font-size:15px; font-weight:600}
+  .body .b{font-size:13px; color:var(--muted); margin-top:2px}
+  .tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+       background:var(--chip); color:#555; padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle}
+  .tag.book{background:#fde8ec; color:var(--accent)}
+  .tag.eat{background:#eaf3ea; color:var(--ok)}
+  .pin{flex:0 0 auto; align-self:center; text-decoration:none; font-size:17px; padding:4px 2px}
+
+  .checklist{background:var(--card); border:1px solid var(--line); border-radius:16px; margin:14px 0; padding:16px 17px}
+  .checklist h3{font-size:17px; font-weight:800; margin-bottom:3px}
+  .checklist .lead{font-size:13px; color:var(--muted); margin-bottom:12px}
+  .ci{display:flex; gap:11px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:14px; align-items:flex-start}
+  .ci:last-child{border-bottom:none}
+  .ci.done{opacity:.45}
+  .ci.done b{text-decoration:line-through}
+  .ci .n{flex:0 0 20px; font-weight:800; color:var(--accent)}
+  .ci .x{flex:1}
+  .ci .x b{font-weight:600}
+  .ci .x span{display:block; color:var(--muted); font-size:12.5px; margin-top:1px}
+
+  .tips{margin:14px 0 4px; padding:2px 4px}
+  .tips h3{font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px}
+  .tip{font-size:13.5px; color:#333; padding:6px 0; display:flex; gap:9px}
+  .tip .dot{color:var(--accent); font-weight:800}
+
+  .install{background:var(--card); border:1px dashed var(--line); border-radius:14px; margin:14px 0; padding:12px 16px; font-size:12.5px; color:var(--muted); display:none}
+  .install.show{display:block}
+
+  footer{text-align:center; font-size:11px; color:#aaa; padding:22px 20px 6px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0">
+    <div class="kick">Viaje familiar · 5 personas</div>
+    <h1>Nueva York</h1>
+    <div class="sub">Miércoles 16 → Domingo 20 de septiembre 2026</div>
+    <div class="countdown" id="countdown">
+      <div><div class="n" id="cd-n">—</div><div class="lbl" id="cd-lbl">calculando</div></div>
+      <div style="text-align:right"><div class="n" id="cd-progress">0%</div><div class="lbl">del itinerario listo</div></div>
+    </div>
+    <div class="progress-global"><i id="global-bar"></i></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="facts">
+    <h2>Datos fijos</h2>
+    <div class="frow"><b>Llegada</b><span>Mié 16, 2:00 PM · JFK T4 · AM 0408</span></div>
+    <div class="frow"><b>Regreso</b><span>Dom 20, 4:00 PM · JFK T4 · AM 0409</span></div>
+    <div class="frow"><b>Hotel</b><span>Romer Hell's Kitchen · 851 8th Ave</span></div>
+    <div class="frow"><b>Check-in / out</b><span>desde 4:00 PM / hasta 11:00 AM</span></div>
+    <div class="frow"><b>Depósito hotel</b><span>USD 900 retenidos en tarjeta al llegar</span></div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="d1" class="active">Mié 16<span class="wx" data-wx="2026-09-16">···</span></button>
+    <button data-t="d2">Jue 17<span class="wx" data-wx="2026-09-17">···</span></button>
+    <button data-t="d3">Vie 18<span class="wx" data-wx="2026-09-18">···</span></button>
+    <button data-t="d4">Sáb 19<span class="wx" data-wx="2026-09-19">···</span></button>
+    <button data-t="d5">Dom 20<span class="wx" data-wx="2026-09-20">···</span></button>
+    <button data-t="comprar">Comprar</button>
+  </div>
+
+  <!-- DÍA 1 -->
+  <div class="pane active" id="d1">
+  <div class="day" data-day="d1">
+    <div class="day-h">
+      <div class="d"><span>Miércoles 16</span><span class="wx-full" data-wxfull="2026-09-16"></span></div>
+      <h3>Llegada y Times Square</h3>
+      <div class="note">Solo tarde-noche. Madrugaron, no exijan más.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="stop" data-id="d1-1"><div class="chk"></div><div class="time">2:00 PM</div><div class="body"><div class="t">Llegada JFK Terminal 4</div><div class="b">Migración + maletas toman 1–1.5 h. Paciencia.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=JFK+Terminal+4+New+York">📍</a></div>
+    <div class="stop" data-id="d1-2"><div class="chk"></div><div class="time">3:30 PM</div><div class="body"><div class="t">Uber XL al hotel</div><div class="b">El taxi amarillo solo lleva 4 y van con maletas. 45–70 min.</div></div></div>
+    <div class="stop" data-id="d1-3"><div class="chk"></div><div class="time">5:00 PM</div><div class="body"><div class="t">Check-in Romer Hell's Kitchen</div><div class="b">Retienen USD 900 de depósito. Que la tarjeta traiga espacio.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+    <div class="stop" data-id="d1-4"><div class="chk"></div><div class="time">6:30 PM</div><div class="body"><div class="t">Times Square de noche</div><div class="b">A 5 min a pie. De noche es cuando vale.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Times+Square+New+York">📍</a></div>
+    <div class="stop" data-id="d1-5"><div class="chk"></div><div class="time">7:30 PM</div><div class="body"><div class="t">Cena: Joe's Pizza <span class="tag eat">comida</span></div><div class="b">Broadway y W 40th. La rebanada clásica, rápido y barato.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Joe%27s+Pizza+Broadway+New+York">📍</a></div>
+    <div class="stop" data-id="d1-6"><div class="chk"></div><div class="time">9:30 PM</div><div class="body"><div class="t">Llegada al hotel a dormir</div><div class="b">Mañana es el día más pesado del viaje.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+  </div>
+  </div>
+
+  <!-- DÍA 2 -->
+  <div class="pane" id="d2">
+  <div class="day" data-day="d2">
+    <div class="day-h">
+      <div class="d"><span>Jueves 17</span><span class="wx-full" data-wxfull="2026-09-17"></span></div>
+      <h3>Downtown: Estatua, 9/11 y Brooklyn</h3>
+      <div class="note">Día largo, 18–20 mil pasos. Tenis probados.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="stop" data-id="d2-0"><div class="chk"></div><div class="time">7:35 AM</div><div class="body"><div class="t">Salir del hotel</div><div class="b">Desayuno rápido antes de bajar a la estación.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+    <div class="stop" data-id="d2-1"><div class="chk"></div><div class="time">7:45 AM</div><div class="body"><div class="t">Tren 1: de 50th St a South Ferry</div><div class="b">~25 min de trayecto.</div></div></div>
+    <div class="stop" data-id="d2-2"><div class="chk"></div><div class="time">8:20 AM</div><div class="body"><div class="t">Seguridad en Castle Clinton (Battery)</div><div class="b">Filas tipo aeropuerto. Lleguen antes de su barco.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Castle+Clinton+Battery+Park+New+York">📍</a></div>
+    <div class="stop" data-id="d2-3"><div class="chk"></div><div class="time">9:00 AM</div><div class="body"><div class="t">Ferry a la Estatua de la Libertad <span class="tag book">reservar</span></div><div class="b">Incluye museo de la Estatua y parada en Ellis Island.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Statue+of+Liberty">📍</a></div>
+    <div class="stop" data-id="d2-4"><div class="chk"></div><div class="time">12:45 PM</div><div class="body"><div class="t">Lunch rumbo a WTC <span class="tag eat">comida</span></div><div class="b">Los Tacos No.1 Tribeca o Eataly Downtown.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Los+Tacos+No+1+Tribeca+New+York">📍</a></div>
+    <div class="stop" data-id="d2-5"><div class="chk"></div><div class="time">2:00 PM</div><div class="body"><div class="t">Museo y Memorial del 9/11 <span class="tag book">reservar</span></div><div class="b">2–2.5 h adentro. Las piletas de afuera son gratis.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=9%2F11+Memorial+Museum+New+York">📍</a></div>
+    <div class="stop" data-id="d2-6"><div class="chk"></div><div class="time">4:45 PM</div><div class="body"><div class="t">Oculus</div><div class="b">15 min de fotos en la estación blanca de Calatrava.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Oculus+World+Trade+Center+New+York">📍</a></div>
+    <div class="stop" data-id="d2-7"><div class="chk"></div><div class="time">5:15 PM</div><div class="body"><div class="t">Puente de Brooklyn a pie</div><div class="b">~1 h con fotos. Caminen del lado de Brooklyn.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Brooklyn+Bridge">📍</a></div>
+    <div class="stop" data-id="d2-8"><div class="chk"></div><div class="time">6:30 PM</div><div class="body"><div class="t">Golden hour en DUMBO</div><div class="b">La foto de Washington St. El sol se mete ~7 PM.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Washington+St+DUMBO+Brooklyn">📍</a></div>
+    <div class="stop" data-id="d2-9"><div class="chk"></div><div class="time">7:30 PM</div><div class="body"><div class="t">Cena buena 1: Cecconi's DUMBO <span class="tag book">reservar</span></div><div class="b">Italiano frente al skyline. Plan B: Juliana's Pizza o Time Out Market.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Cecconi%27s+DUMBO+Brooklyn">📍</a></div>
+    <div class="stop" data-id="d2-10"><div class="chk"></div><div class="time">9:30 PM</div><div class="body"><div class="t">Regreso: tren A/C de High St a 50th St</div><div class="b">~35 min de trayecto.</div></div></div>
+    <div class="stop" data-id="d2-11"><div class="chk"></div><div class="time">10:05 PM</div><div class="body"><div class="t">Llegada al hotel</div><div class="b">A dormir, día largo mañana también.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+  </div>
+  </div>
+
+  <!-- DÍA 3 -->
+  <div class="pane" id="d3">
+  <div class="day" data-day="d3">
+    <div class="day-h">
+      <div class="d"><span>Viernes 18</span><span class="wx-full" data-wxfull="2026-09-18"></span></div>
+      <h3>Uptown, Central Park y Broadway</h3>
+      <div class="note">Cierra con El Rey León. Otro día de 15+ mil pasos.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="stop" data-id="d3-0"><div class="chk"></div><div class="time">9:20 AM</div><div class="body"><div class="t">Salir del hotel</div><div class="b">Pidan el Uber desde la puerta.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+    <div class="stop" data-id="d3-1"><div class="chk"></div><div class="time">9:30 AM</div><div class="body"><div class="t">Uber/taxi al MET</div><div class="b">~20 min. Lleguen 9:50, abre a las 10.</div></div></div>
+    <div class="stop" data-id="d3-2"><div class="chk"></div><div class="time">10:00 AM</div><div class="body"><div class="t">MET: lo esencial en 2.5 h <span class="tag book">reservar</span></div><div class="b">Templo de Dendur, Egipto, armas y armaduras, impresionistas.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=The+Metropolitan+Museum+of+Art+New+York">📍</a></div>
+    <div class="stop" data-id="d3-3"><div class="chk"></div><div class="time">12:45 PM</div><div class="body"><div class="t">Cruzar Central Park a pie</div><div class="b">Bethesda Terrace, Bow Bridge y Strawberry Fields. ~1 h.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Bethesda+Terrace+Central+Park+New+York">📍</a></div>
+    <div class="stop" data-id="d3-4"><div class="chk"></div><div class="time">1:45 PM</div><div class="body"><div class="t">Lunch: Shake Shack <span class="tag eat">comida</span></div><div class="b">77th y Columbus. A 2 cuadras del siguiente museo.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Shake+Shack+77th+Columbus+New+York">📍</a></div>
+    <div class="stop" data-id="d3-5"><div class="chk"></div><div class="time">2:45 PM</div><div class="body"><div class="t">Museo de Historia Natural <span class="tag book">reservar</span></div><div class="b">Dinos, la ballena azul y el Gilder Center. Cierra 5:30.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=American+Museum+of+Natural+History+New+York">📍</a></div>
+    <div class="stop" data-id="d3-6"><div class="chk"></div><div class="time">5:35 PM</div><div class="body"><div class="t">Cookie de Levain + tren C a 50th <span class="tag eat">comida</span></div><div class="b">74th y Amsterdam. El C los deja a una cuadra del hotel.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Levain+Bakery+74th+Amsterdam+New+York">📍</a></div>
+    <div class="stop" data-id="d3-7"><div class="chk"></div><div class="time">6:15 PM</div><div class="body"><div class="t">Cena rápida cerca del hotel <span class="tag eat">comida</span></div><div class="b">The Halal Guys (53rd y 6th) o algo exprés. Hay show.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=The+Halal+Guys+53rd+6th+New+York">📍</a></div>
+    <div class="stop" data-id="d3-8"><div class="chk"></div><div class="time">7:00 PM</div><div class="body"><div class="t">EL REY LEÓN — Minskoff <span class="tag book">reservar</span></div><div class="b">W 45th, 8 min a pie. 2h30 con intermedio.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Minskoff+Theatre+New+York">📍</a></div>
+    <div class="stop" data-id="d3-9"><div class="chk"></div><div class="time">9:45 PM</div><div class="body"><div class="t">Times Square iluminado de regreso</div><div class="b">Les queda de pasada.</div></div></div>
+    <div class="stop" data-id="d3-10"><div class="chk"></div><div class="time">10:00 PM</div><div class="body"><div class="t">Llegada al hotel</div><div class="b">8 min a pie desde el teatro.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+  </div>
+  </div>
+
+  <!-- DÍA 4 -->
+  <div class="pane" id="d4">
+  <div class="day" data-day="d4">
+    <div class="day-h">
+      <div class="d"><span>Sábado 19</span><span class="wx-full" data-wxfull="2026-09-19"></span></div>
+      <h3>MoMA, 5th Ave, SoHo y atardecer</h3>
+      <div class="note">Museo en la mañana, mirador al ponerse el sol.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="stop" data-id="d4-0"><div class="chk"></div><div class="time">10:20 AM</div><div class="body"><div class="t">Salir del hotel</div><div class="b">A pie, 10 min al museo.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Romer+Hell%27s+Kitchen+851+8th+Ave+New+York">📍</a></div>
+    <div class="stop" data-id="d4-1"><div class="chk"></div><div class="time">10:30 AM</div><div class="body"><div class="t">MoMA (11 W 53rd St) <span class="tag book">reservar</span></div><div class="b">La noche estrellada, Monet, Picasso, Warhol. ~2 h.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=MoMA+11+W+53rd+St+New+York">📍</a></div>
+    <div class="stop" data-id="d4-2"><div class="chk"></div><div class="time">12:40 PM</div><div class="body"><div class="t">5th Avenue desde el MoMA</div><div class="b">St. Patrick's, Saks, Rockefeller, Nintendo NY y el cubo de Apple.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=5th+Avenue+New+York">📍</a></div>
+    <div class="stop" data-id="d4-3"><div class="chk"></div><div class="time">2:20 PM</div><div class="body"><div class="t">Tren E de 5th Ave/53rd a Spring St</div><div class="b">Si compraron mucho, dejen bolsas en el hotel antes.</div></div></div>
+    <div class="stop" data-id="d4-4"><div class="chk"></div><div class="time">3:00 PM</div><div class="body"><div class="t">Lunch tardío: Katz's Delicatessen <span class="tag eat">comida</span></div><div class="b">El pastrami on rye. Un sándwich alcanza para dos.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Katz%27s+Delicatessen+New+York">📍</a></div>
+    <div class="stop" data-id="d4-5"><div class="chk"></div><div class="time">3:50 PM</div><div class="body"><div class="t">SoHo y Nolita</div><div class="b">Tiendas por Prince, Spring y Broadway. El cronut de Dominique Ansel.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Dominique+Ansel+Bakery+SoHo+New+York">📍</a></div>
+    <div class="stop" data-id="d4-6"><div class="chk"></div><div class="time">5:05 PM</div><div class="body"><div class="t">Tren 6 de Spring St a Grand Central</div><div class="b">~20 min. Summit está adentro de Grand Central.</div></div></div>
+    <div class="stop" data-id="d4-7"><div class="chk"></div><div class="time">5:45 PM</div><div class="body"><div class="t">Summit One Vanderbilt al atardecer <span class="tag book">reservar</span></div><div class="b">El sol se mete ~6:55. Salgan ~7:15 ya de noche.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Summit+One+Vanderbilt+New+York">📍</a></div>
+    <div class="stop" data-id="d4-8"><div class="chk"></div><div class="time">8:15 PM</div><div class="body"><div class="t">Cena buena 2: Keens Steakhouse <span class="tag book">reservar</span></div><div class="b">W 36th, 15 min a pie. Porterhouse desde 1885.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Keens+Steakhouse+New+York">📍</a></div>
+    <div class="stop" data-id="d4-9"><div class="chk"></div><div class="time">10:30 PM</div><div class="body"><div class="t">Regreso al hotel</div><div class="b">10 min en taxi.</div></div></div>
+  </div>
+  </div>
+
+  <!-- DÍA 5 -->
+  <div class="pane" id="d5">
+  <div class="day" data-day="d5">
+    <div class="day-h">
+      <div class="d"><span>Domingo 20</span><span class="wx-full" data-wxfull="2026-09-20"></span></div>
+      <h3>Mañana corta y aeropuerto</h3>
+      <div class="note">Vuelo 4:00 PM. Dejen todo empacado desde la noche.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="stop" data-id="d5-1"><div class="chk"></div><div class="time">8:30 AM</div><div class="body"><div class="t">Desayuno: bagel con lox <span class="tag eat">comida</span></div><div class="b">Hay varias bagel shops sobre 8th Ave.</div></div></div>
+    <div class="stop" data-id="d5-2"><div class="chk"></div><div class="time">9:15 AM</div><div class="body"><div class="t">Central Park sur / Columbus Circle</div><div class="b">Última caminada o compras finales. 15 min a pie.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Columbus+Circle+New+York">📍</a></div>
+    <div class="stop" data-id="d5-3"><div class="chk"></div><div class="time">10:30 AM</div><div class="body"><div class="t">Checkout</div><div class="b">Límite 11:00. No lo dejen al último.</div></div></div>
+    <div class="stop" data-id="d5-4"><div class="chk"></div><div class="time">11:30 AM</div><div class="body"><div class="t">Uber XL a JFK</div><div class="b">Domingo fluye, ~55 min.</div></div></div>
+    <div class="stop" data-id="d5-5"><div class="chk"></div><div class="time">12:45 PM</div><div class="body"><div class="t">JFK Terminal 4 — vuelo AM 0409</div><div class="b">Internacional pide 3 h de colchón antes del despegue.</div></div><a class="pin" target="_blank" href="https://www.google.com/maps/search/?api=1&query=JFK+Terminal+4+New+York">📍</a></div>
+  </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="pane" id="comprar">
+  <div class="checklist">
+    <h3>Comprar antes del viaje</h3>
+    <div class="lead">Faltan ~3 semanas. Esto es lo que se agota, en orden.</div>
+    <div class="ci" data-id="c1"><div class="chk"></div><div class="x"><b>El Rey León — Broadway Week 2x1</b><span>Vie 18. En nyctourism.com/broadway-week con código 241BWSHOW (o UPBWSHOW para mejores asientos). 5 boletos = pagan 3. Verifica que el viernes 18 no tenga blackout.</span></div></div>
+    <div class="ci" data-id="c2"><div class="chk"></div><div class="x"><b>Summit One Vanderbilt</b><span>Sáb, slot 5:45–6:00 PM (atardecer, el primero que se agota). ~$56 c/u.</span></div></div>
+    <div class="ci" data-id="c3"><div class="chk"></div><div class="x"><b>Estatua de la Libertad</b><span>Jue, ferry 9:00 AM. SOLO en statuecitycruises.com (mucho revendedor). ~$25.50 c/u. Si hay pedestal para el 17, tómenlo.</span></div></div>
+    <div class="ci" data-id="c4"><div class="chk"></div><div class="x"><b>Museo del 9/11</b><span>Jue 2:00 PM, entrada con horario. $36 c/u.</span></div></div>
+    <div class="ci" data-id="c5"><div class="chk"></div><div class="x"><b>Keens Steakhouse</b><span>Sáb 8:15 PM, mesa de 5. Reserva ya, sábado se llena.</span></div></div>
+    <div class="ci" data-id="c6"><div class="chk"></div><div class="x"><b>Cecconi's DUMBO</b><span>Jue 7:30 PM, mesa de 5.</span></div></div>
+    <div class="ci" data-id="c7"><div class="chk"></div><div class="x"><b>MoMA</b><span>Sáb 10:30 AM. $30 c/u, incluye exposiciones especiales.</span></div></div>
+    <div class="ci" data-id="c8"><div class="chk"></div><div class="x"><b>MET</b><span>Vie 10:00 AM. $30 c/u. Cómprenlo en línea para ir directo a la fila.</span></div></div>
+    <div class="ci" data-id="c9"><div class="chk"></div><div class="x"><b>Museo de Historia Natural</b><span>Vie 2:45 PM. $30 c/u, horario de 2:30–3:00 PM.</span></div></div>
+  </div>
+
+  <div class="tips">
+    <h3>Prácticos</h3>
+    <div class="tip"><span class="dot">→</span><div>El metro se paga acercando cualquier tarjeta sin contacto o el celular al torniquete. $2.90 por viaje.</div></div>
+    <div class="tip"><span class="dot">→</span><div>Nada de pases (CityPASS): con este plan sale más caro. Todo directo en el sitio oficial de cada atracción.</div></div>
+    <div class="tip"><span class="dot">→</span><div>Jueves y viernes son de 15–20 mil pasos. Tenis ya probados, nada de estreno.</div></div>
+    <div class="tip"><span class="dot">→</span><div>Clima a mediados de septiembre: 18–26 °C, noches frescas. Una capa ligera basta.</div></div>
+    <div class="tip"><span class="dot">→</span><div>Presupuesto en puros boletos: ~$208 por persona en museos y miradores, más Broadway (menos con el 2x1).</div></div>
+  </div>
+  </div>
+
+  <div class="install" id="install">📲 Toca compartir → "Agregar a pantalla de inicio" para usarla como app, incluso sin internet.</div>
+
+  <footer>Itinerario Nueva York · 16–20 sep 2026 · 5 personas</footer>
+
+</div>
+
+<script>
+// ---- Tabs ----
+const tabs = document.querySelectorAll('#tabs button');
+tabs.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    tabs.forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.t).classList.add('active');
+  });
+});
+
+// ---- Checkboxes persistentes ----
+const KEY = 'ny2026-check';
+let state = {};
+try{ state = JSON.parse(localStorage.getItem(KEY) || '{}'); }catch(e){ state = {}; }
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+function paint(){
+  let doneTotal=0, all=0;
+  document.querySelectorAll('.stop[data-id], .ci[data-id]').forEach(el=>{
+    const id = el.dataset.id;
+    const on = !!state[id];
+    const box = el.querySelector('.chk');
+    box.classList.toggle('on', on);
+    box.textContent = on ? '✓' : '';
+    el.classList.toggle('done', on);
+    all++; if(on) doneTotal++;
+  });
+  document.querySelectorAll('.day').forEach(day=>{
+    const stops = day.querySelectorAll('.stop[data-id]');
+    let d=0; stops.forEach(s=>{ if(state[s.dataset.id]) d++; });
+    const pct = stops.length ? Math.round(d/stops.length*100) : 0;
+    day.querySelector('.bar i').style.width = pct+'%';
+  });
+  const pct = all ? Math.round(doneTotal/all*100) : 0;
+  document.getElementById('cd-progress').textContent = pct+'%';
+  document.getElementById('global-bar').style.width = pct+'%';
+}
+
+document.addEventListener('click', (e)=>{
+  const box = e.target.closest('.chk');
+  if(!box) return;
+  const el = box.closest('[data-id]');
+  if(!el) return;
+  const id = el.dataset.id;
+  state[id] = !state[id];
+  save(); paint();
+});
+paint();
+
+// ---- Countdown ----
+function tickCountdown(){
+  const now = new Date();
+  const start = new Date('2026-09-16T14:00:00-04:00');
+  const end = new Date('2026-09-20T16:00:00-04:00');
+  const n = document.getElementById('cd-n');
+  const lbl = document.getElementById('cd-lbl');
+  if(now < start){
+    const days = Math.ceil((start-now)/86400000);
+    n.textContent = days;
+    lbl.textContent = days===1 ? 'día para el viaje' : 'días para el viaje';
+  } else if(now <= end){
+    n.textContent = '¡Aquí!';
+    lbl.textContent = 'están en Nueva York';
+  } else {
+    n.textContent = '✓';
+    lbl.textContent = 'viaje hecho';
+  }
+}
+tickCountdown();
+setInterval(tickCountdown, 3600000);
+
+// ---- Clima real (Open-Meteo, sin API key) ----
+const WMO = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+fetch('https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=America%2FNew_York&forecast_days=16')
+  .then(r=>r.json())
+  .then(d=>{
+    if(!d.daily) return;
+    const idx = {};
+    d.daily.time.forEach((date,i)=>{ idx[date]=i; });
+    document.querySelectorAll('[data-wx]').forEach(el=>{
+      const date = el.dataset.wx;
+      if(idx[date]===undefined){ el.textContent=''; return; }
+      const i = idx[date];
+      const icon = WMO[d.daily.weathercode[i]] || '';
+      const hi = Math.round(d.daily.temperature_2m_max[i]);
+      el.textContent = `${icon} ${hi}°`;
+    });
+    document.querySelectorAll('[data-wxfull]').forEach(el=>{
+      const date = el.dataset.wxfull;
+      if(idx[date]===undefined){ el.textContent='pronóstico aún no disponible'; return; }
+      const i = idx[date];
+      const icon = WMO[d.daily.weathercode[i]] || '';
+      const hi = Math.round(d.daily.temperature_2m_max[i]);
+      const lo = Math.round(d.daily.temperature_2m_min[i]);
+      el.textContent = `${icon} ${hi}° / ${lo}°`;
+    });
+  })
+  .catch(()=>{});
+
+// ---- PWA: manifest + service worker ----
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+if(!window.matchMedia('(display-mode: standalone)').matches){
+  document.getElementById('install').classList.add('show');
+}
+</script>
+</body>
+</html>

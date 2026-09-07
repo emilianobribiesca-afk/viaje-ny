@@ -373,8 +373,22 @@ function renderFilters(){
   $("#filters").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{curFilter=c.dataset.f;renderFilters();renderItin();});
 }
 function ticketBtn(t){ if(!t) return ""; const m=DATA.tickets[t]; if(!m) return ""; return `<button class="act primary" data-tk="${t}">Ver boleto</button>`; }
+/* El botón de Uber solo aparece donde el itinerario ya dice que van en coche:
+   el traslado inmediatamente anterior a esa parada es Uber o taxi. */
+function paradasEnCoche(d){
+  const set = new Set();
+  d.items.forEach((it,i)=>{
+    if(it.type==="transit" && /uber|taxi/i.test(it.mode||"")){
+      const dest = d.items.slice(i+1).find(x=>x.type==="stop");
+      if(dest) set.add(dest.name);
+    }
+  });
+  return set;
+}
+
 function renderItin(){
   const d = day(curDay);
+  const enCoche = paradasEnCoche(d);
   const items = d.items.filter(it=>{
     if(curFilter==="todo") return true;
     if(it.type==="transit") return false;
@@ -398,7 +412,7 @@ function renderItin(){
       <div class="body">
         ${thumbFor(it, d.color)}
         <div class="txt"><div class="name">${esc(it.name)}${pill}</div><div class="note">${esc(it.note)}</div>
-        <div class="acts">${it.nomark?"":`<a class="act" target="_blank" rel="noopener" href="${gm(it.lat,it.lng,prev)}">Cómo llegar</a><a class="act uber" target="_blank" rel="noopener" href="${uber(it.lat,it.lng,it.name)}">Uber</a>`}${ticketBtn(it.ticket)}${alts}</div></div>
+        <div class="acts">${it.nomark?"":`<a class="act" target="_blank" rel="noopener" href="${gm(it.lat,it.lng,prev)}">Cómo llegar</a>${enCoche.has(it.name)?`<a class="act uber" target="_blank" rel="noopener" href="${uber(it.lat,it.lng,it.name)}">Pedir Uber</a>`:""}`}${ticketBtn(it.ticket)}${alts}</div></div>
         <button class="chk ${d.dark?'light':''}" data-done="${esc(id)}" aria-label="Marcar como hecha">&#10003;</button>
       </div></div>`;
     if(!it.nomark) prev = it;
@@ -506,13 +520,14 @@ function renderMap(){
   const days = mapDay==="all" ? DATA.days : [day(mapDay)];
   const now = currentStop();
   days.forEach(d=>{
+    const coche = paradasEnCoche(d);
     const stops = d.items.filter(it=>it.type==="stop" && !it.nomark);
     const pts = stops.map(s=>[s.lat,s.lng]);
     if(pts.length>1) L.polyline(pts,{color:d.color,weight:4,opacity:.85}).addTo(layer);
     stops.forEach((s,i)=>{
       bounds.push([s.lat,s.lng]);
       const m = L.marker([s.lat,s.lng],{icon:markerIcon(d.color,i+1,d.dark,now===s)}).addTo(layer);
-      m.bindPopup(`<b>${esc(s.name)}</b><span style="color:#666;font-size:12px">${esc(d.label)}, ${esc(s.t)}</span><div class="acts"><a class="act" target="_blank" rel="noopener" href="${gm(s.lat,s.lng)}">Cómo llegar</a><a class="act uber" target="_blank" rel="noopener" href="${uber(s.lat,s.lng,s.name)}">Uber</a>${s.ticket&&DATA.tickets[s.ticket]?`<button class="act primary" onclick="openTicket('${s.ticket}')">Ver boleto</button>`:""}</div>`);
+      m.bindPopup(`<b>${esc(s.name)}</b><span style="color:#666;font-size:12px">${esc(d.label)}, ${esc(s.t)}</span><div class="acts"><a class="act" target="_blank" rel="noopener" href="${gm(s.lat,s.lng)}">Cómo llegar</a>${coche.has(s.name)?`<a class="act uber" target="_blank" rel="noopener" href="${uber(s.lat,s.lng,s.name)}">Pedir Uber</a>`:""}${s.ticket&&DATA.tickets[s.ticket]?`<button class="act primary" onclick="openTicket('${s.ticket}')">Ver boleto</button>`:""}</div>`);
     });
     legend.push(`<span><i style="background:${d.color}"></i>${d.label}</span>`);
   });

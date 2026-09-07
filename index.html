@@ -139,13 +139,39 @@ tr.total td{border-bottom:none;padding-top:10px;font-size:15px}
 .tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .tab.on{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Lightbox de boleto: QR a pantalla completa */
+.lb{position:fixed;inset:0;background:#fff;z-index:9999;display:none;flex-direction:column}
+.lb.on{display:flex}
+.lb .lbtop{display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 8px;gap:10px}
+.lb .lbtop b{font-size:15px;font-weight:700}
+.lb .x{border:none;background:var(--soft);border-radius:999px;width:34px;height:34px;font-size:19px;line-height:1;color:#333;flex:0 0 34px}
+.lb .stage{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0 10px}
+.lb .stage img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:10px;border:1px solid var(--hair)}
+.lb .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 12px)}
+.lb .nav button{border:1.5px solid var(--ink);background:#fff;border-radius:8px;padding:9px 14px;font-size:14px;font-weight:600}
+.lb .nav button[disabled]{opacity:.3}
+.lb .nav .pos{font-size:13px;color:var(--gray);font-weight:600}
+.lb .tip{font-size:12px;color:var(--gray);text-align:center;padding:0 14px 6px}
+
+/* Acciones de día / hotel */
+.dayact{display:flex;gap:6px;padding:0 18px 12px;overflow-x:auto;scrollbar-width:none}
+.dayact::-webkit-scrollbar{display:none}
+.dayact a{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
+.sign .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sign .home{flex:0 0 auto;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="sign">
-    <h1>Nueva York</h1>
-    <p>16 – 20 de septiembre, 5 personas. Hotel Romer Hell's Kitchen, 851 8th Ave.</p>
+    <div class="top">
+      <div>
+        <h1>Nueva York</h1>
+        <p>16 – 20 de septiembre, 5 personas. Hotel Romer Hell's Kitchen, 851 8th Ave.</p>
+      </div>
+      <a class="home" id="tohotel" target="_blank" rel="noopener" href="#">Al hotel &rsaquo;</a>
+    </div>
     <div class="cd" id="cd"><span id="cd-lbl">calculando…</span><b id="cd-n"></b></div>
   </header>
 
@@ -153,6 +179,7 @@ tr.total td{border-bottom:none;padding-top:10px;font-size:15px}
     <div class="days" id="days"></div>
     <div class="daytitle"><h2 id="dt"></h2><p id="ds"></p><p class="wx" id="wx"></p></div>
     <div class="filters" id="filters"></div>
+    <div class="dayact" id="dayact"></div>
     <div class="tl" id="tl"></div>
   </section>
 
@@ -164,7 +191,7 @@ tr.total td{border-bottom:none;padding-top:10px;font-size:15px}
   </section>
 
   <section id="v-tix" class="view">
-    <p class="hint">Toca un boleto para ver su QR. Sube el brillo del celular al escanear. Funciona sin internet.</p>
+    <p class="hint">Toca un boleto para desplegarlo y toca el QR para verlo en pantalla completa. Funciona sin internet.</p>
     <div id="tix"></div>
   </section>
 
@@ -200,7 +227,34 @@ let curDay = defaultDay(), curFilter = "todo", mapDay = curDay, map = null, laye
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const gm = (lat,lng) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+const HOTEL = {lat:40.7629, lng:-73.9857, name:"Romer Hell's Kitchen"};
+/* Distancia en km entre dos puntos (haversine). */
+function km(a,b,c,d){
+  const R=6371, r=x=>x*Math.PI/180;
+  const dla=r(c-a), dlo=r(d-b);
+  const h=Math.sin(dla/2)**2 + Math.cos(r(a))*Math.cos(r(c))*Math.sin(dlo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+/* Enlace a Google Maps. El modo se decide por la distancia desde la parada
+   anterior: menos de 1.2 km se camina, más se va en metro. */
+function gm(lat,lng,from){
+  const mode = (from && km(from.lat,from.lng,lat,lng) < 1.2) ? "walking" : "transit";
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=${mode}`;
+}
+/* Ruta de varias paradas. Google admite 9 waypoints, así que el día se parte
+   en tramos de 11 paradas. */
+function gmRoute(stops){
+  const o = stops[0], d = stops[stops.length-1];
+  const way = stops.slice(1,-1).map(s=>`${s.lat},${s.lng}`).join("|");
+  return `https://www.google.com/maps/dir/?api=1&origin=${o.lat},${o.lng}&destination=${d.lat},${d.lng}`
+       + (way?`&waypoints=${encodeURIComponent(way)}`:"") + `&travelmode=transit`;
+}
+function dayLegs(d){
+  const stops = d.items.filter(it=>it.type==="stop" && !it.nomark && !it.opt);
+  const legs = [];
+  for(let i=0;i<stops.length;i+=10) legs.push(stops.slice(i, i+11));
+  return legs.filter(l=>l.length>1);
+}
 const day = id => DATA.days.find(d=>d.id===id);
 
 function parseTime(dateStr, tStr){
@@ -245,6 +299,7 @@ function renderItin(){
   });
   $("#tl").style.setProperty("--daycolor", d.color);
   const now = currentStop();
+  let prev = null;
   $("#tl").innerHTML = items.map(it=>{
     if(it.type==="transit"){
       const bullets = it.lines.map(l=>`<span class="line ${LINECOLOR[l]==="#FCCC0A"?'yel':''}" style="background:${LINECOLOR[l]||'#777'}">${l}</span>`).join("");
@@ -252,12 +307,18 @@ function renderItin(){
     }
     const nowPill = (now && now===it) ? `<span class="pill now">Ahora</span>` : "";
     const pill = (it.status?`<span class="pill ${it.status}">${it.status==="pagado"?"Pagado":it.status==="reservado"?"Reservado":"Por reservar"}</span>`:"") + nowPill;
-    const alts = (it.alts||[]).map(a=>`<a class="act" target="_blank" rel="noopener" href="${gm(a.lat,a.lng)}">Ir a ${esc(a.name)}</a>`).join("");
-    return `<div class="row ${it.opt?'opt':''}"><div class="time">${esc(it.t)}</div><div class="rail"><span class="dot ${it.status?'filled':''}"></span></div>
+    const alts = (it.alts||[]).map(a=>`<a class="act" target="_blank" rel="noopener" href="${gm(a.lat,a.lng,prev)}">Ir a ${esc(a.name)}</a>`).join("");
+    const html = `<div class="row ${it.opt?'opt':''}"><div class="time">${esc(it.t)}</div><div class="rail"><span class="dot ${it.status?'filled':''}"></span></div>
       <div class="body"><div class="name">${esc(it.name)}${pill}</div><div class="note">${esc(it.note)}</div>
-      <div class="acts">${it.nomark?"":`<a class="act" target="_blank" rel="noopener" href="${gm(it.lat,it.lng)}">Cómo llegar</a>`}${ticketBtn(it.ticket)}${alts}</div></div></div>`;
+      <div class="acts">${it.nomark?"":`<a class="act" target="_blank" rel="noopener" href="${gm(it.lat,it.lng,prev)}">Cómo llegar</a>`}${ticketBtn(it.ticket)}${alts}</div></div></div>`;
+    if(!it.nomark) prev = it;
+    return html;
   }).join("") || `<p class="hint">Nada de esta categoría este día.</p>`;
   $("#tl").querySelectorAll("[data-tk]").forEach(b=>b.onclick=()=>openTicket(b.dataset.tk));
+  const legs = dayLegs(d);
+  $("#dayact").innerHTML = legs.map((l,i)=>
+    `<a target="_blank" rel="noopener" href="${gmRoute(l)}">${legs.length>1?`Ruta ${i+1} de ${legs.length}`:"Ver el día en Google Maps"} · ${l.length} paradas</a>`
+  ).join("");
 }
 
 /* Map */
@@ -305,13 +366,14 @@ function renderTix(){
     if(!byDay[d.id]) return;
     html += `<div class="sec"><h3>${esc(d.label)}</h3></div>`;
     byDay[d.id].forEach(([k,m])=>{
-      const imgs = m.imgs && TIX[m.imgs] ? TIX[m.imgs].map(b=>`<img loading="lazy" alt="${esc(m.title)}" src="data:image/jpeg;base64,${b}">`).join("") : `<div class="none">${esc(m.who)}</div>`;
+      const imgs = m.imgs && TIX[m.imgs] ? TIX[m.imgs].map((b,i)=>`<img loading="lazy" alt="${esc(m.title)}" data-lb="${m.imgs}" data-i="${i}" src="${dataURI(b)}">`).join("") : `<div class="none">${esc(m.who)}</div>`;
       const pill = `<span class="pill ${m.status}">${m.status==="pagado"?"Pagado":m.status==="reservado"?"Reservado":"Por reservar"}</span>`;
       html += `<div class="tk" id="tk-${k}"><button class="head" data-open="${k}"><div><b>${esc(m.title)}${pill}</b><span class="meta">${esc(m.when)}</span><div class="code">${esc(m.code)}${m.imgs?"<br>"+esc(m.who):""}</div></div><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button><div class="imgs">${imgs}</div></div>`;
     });
   });
   $("#tix").innerHTML = html;
   $("#tix").querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>b.parentElement.classList.toggle("open"));
+  $("#tix").querySelectorAll("img[data-lb]").forEach(im=>im.onclick=()=>openLB(im.dataset.lb, +im.dataset.i));
 }
 function openTicket(k){
   switchTab("tix");
@@ -319,6 +381,71 @@ function openTicket(k){
   document.querySelectorAll(".tk.open").forEach(t=>t.classList.remove("open"));
   el.classList.add("open"); setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),50);
 }
+
+
+/* Boleto a pantalla completa. Mantiene la pantalla encendida mientras lo
+   escanean: en la fila del torniquete el celular se apaga solo. */
+let lbKey = null, lbIdx = 0, wake = null;
+const LBTITLE = {est:"Estatua de la Libertad", n11:"Museo del 9/11", met:"MET",
+  amnh:"Museo de Historia Natural", moma:"MoMA", bom:"The Book of Mormon",
+  summit:"Summit One Vanderbilt", cecc:"Cecconi's DUMBO"};
+
+function buildLB(){
+  const el = document.createElement("div");
+  el.className = "lb"; el.id = "lb";
+  el.innerHTML = `<div class="lbtop"><b id="lb-t"></b><button class="x" id="lb-x" aria-label="Cerrar">&times;</button></div>
+    <div class="stage"><img id="lb-img" alt=""></div>
+    <p class="tip">Sube el brillo al máximo. La pantalla no se apagará mientras esto esté abierto.</p>
+    <div class="nav"><button id="lb-prev">&lsaquo; Anterior</button><span class="pos" id="lb-pos"></span><button id="lb-next">Siguiente &rsaquo;</button></div>`;
+  document.body.appendChild(el);
+  $("#lb-x").onclick = closeLB;
+  $("#lb-prev").onclick = ()=>stepLB(-1);
+  $("#lb-next").onclick = ()=>stepLB(1);
+  document.addEventListener("keydown", e=>{
+    if(!$("#lb").classList.contains("on")) return;
+    if(e.key==="Escape") closeLB();
+    if(e.key==="ArrowLeft") stepLB(-1);
+    if(e.key==="ArrowRight") stepLB(1);
+  });
+  return el;
+}
+function paintLB(){
+  const arr = TIX[lbKey] || [];
+  $("#lb-img").src = dataURI(arr[lbIdx]);
+  $("#lb-t").textContent = LBTITLE[lbKey] || "Boleto";
+  $("#lb-pos").textContent = arr.length>1 ? `${lbIdx+1} de ${arr.length}` : "";
+  $("#lb-prev").disabled = lbIdx===0;
+  $("#lb-next").disabled = lbIdx>=arr.length-1;
+  $("#lb-prev").style.visibility = arr.length>1 ? "visible" : "hidden";
+  $("#lb-next").style.visibility = arr.length>1 ? "visible" : "hidden";
+}
+function stepLB(n){
+  const arr = TIX[lbKey] || [];
+  lbIdx = Math.max(0, Math.min(arr.length-1, lbIdx+n));
+  paintLB();
+  $(".lb .stage").scrollTop = 0;
+}
+async function openLB(key, i){
+  if(!document.getElementById("lb")) buildLB();
+  lbKey = key; lbIdx = i || 0;
+  paintLB();
+  $("#lb").classList.add("on");
+  try{ if("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); }catch(e){}
+}
+function closeLB(){
+  $("#lb").classList.remove("on");
+  try{ wake && wake.release(); }catch(e){}
+  wake = null;
+}
+/* iOS suelta el wake lock al cambiar de app; recuperarlo al volver. */
+document.addEventListener("visibilitychange", async ()=>{
+  if(document.visibilityState==="visible" && !wake && document.getElementById("lb") && $("#lb").classList.contains("on")){
+    try{ if("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); }catch(e){}
+  }
+});
+
+/* El mime real por los primeros bytes: casi todo es PNG, Cecconi's sigue siendo JPEG. */
+const dataURI = b => `data:image/${b.startsWith("/9j/") ? "jpeg" : "png"};base64,${b}`;
 
 /* Info */
 function renderInfo(){
@@ -354,7 +481,7 @@ function renderInfo(){
     </ul>
   </div>
   <div class="card"><h3>Sobre esta app</h3>
-    <p class="muted">El itinerario y los boletos funcionan sin internet. El mapa necesita señal para cargar las calles. Los botones "Cómo llegar" abren Google Maps con la ruta desde donde estés. Guarda este archivo en Archivos del celular o mándatelo por WhatsApp para tenerlo siempre a la mano.</p>
+    <p class="muted">El itinerario y los boletos funcionan sin internet. El mapa necesita señal para cargar las calles. Los botones "Cómo llegar" abren Google Maps con la ruta desde donde estés, y eligen solos a pie o en metro según la distancia. "Ver el día en Google Maps" abre el recorrido completo con todas las paradas. Toca un QR para verlo en pantalla completa: mientras esté abierto la pantalla no se apaga. Guarda este archivo en Archivos del celular o mándatelo por WhatsApp para tenerlo siempre a la mano.</p>
   </div>`;
 }
 
@@ -382,6 +509,7 @@ function tickCountdown(){
     lbl.textContent = "Viaje"; n.textContent = "hecho ✓";
   }
 }
+$("#tohotel").href = gm(HOTEL.lat, HOTEL.lng);
 tickCountdown();
 setInterval(()=>{ tickCountdown(); renderItin(); if(map) renderMap(); }, 60000);
 

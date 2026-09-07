@@ -299,7 +299,7 @@ function defaultDay(){
   return found ? found[0] : "mie";
 }
 
-let curDay = defaultDay(), curFilter = "todo", mapDay = curDay, map = null, layer = null;
+let curDay = defaultDay(), curFilter = "todo", mapDay = curDay, map = null, layer = null, baseLayer = null;
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -455,8 +455,9 @@ function initMap(){
   map = L.map("map",{zoomControl:false,attributionControl:true}).setView([40.745,-73.99],12);
   L.control.zoom({position:"bottomright"}).addTo(map);
   try{
-    protomapsL.leafletLayer({url:MAPFILE, flavor:"light", lang:"es", maxDataZoom:15, maxZoom:18,
-      attribution:'&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> · Protomaps'}).addTo(map);
+    baseLayer = protomapsL.leafletLayer({url:MAPFILE, flavor:"light", lang:"es", maxDataZoom:15, maxZoom:18,
+      attribution:'&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> · Protomaps'});
+    baseLayer.addTo(map);
   }catch(e){
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(map);
   }
@@ -503,6 +504,9 @@ async function downloadMap(){
       "Content-Length": String(blob.size)
     }}));
     btn.textContent = "Mapa guardado ✓";
+    /* Repintar: mientras se descargaba, algunos pedazos se pidieron a la red y
+       fallaron. Ahora todo sale del archivo guardado. */
+    try{ baseLayer && baseLayer.rerenderTiles ? baseLayer.rerenderTiles() : (baseLayer && baseLayer.redraw && baseLayer.redraw()); }catch(e){}
     setTimeout(()=>{ box.classList.add("done"); }, 1400);
   }catch(e){
     box.classList.remove("busy");

@@ -1,12 +1,17 @@
-const CACHE = 'ny2026-v7';
+const CACHE = 'ny2026-v8';
 const MAPCACHE = 'ny-map-v1';          // el mapa de 20 MB vive aparte: no se borra al actualizar la app
 const MAPFILE = 'ny.pmtiles';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './pml.js',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
 
+/* cache:'reload' es obligatorio: sin él, al instalar una versión nueva el
+   navegador rellena el caché con lo que ya tenía guardado y la actualización
+   nunca llega. */
 self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>Promise.allSettled(ASSETS.map(a=>c.add(a)))));
+  e.waitUntil(caches.open(CACHE).then(c=>Promise.allSettled(
+    ASSETS.map(a=>c.add(new Request(a, {cache:'reload'})))
+  )));
   self.skipWaiting();
 });
 self.addEventListener('activate', e=>{
@@ -39,16 +44,31 @@ async function serveMap(req){
   }});
 }
 
+/* La app se sirve del caché (instantánea y sin datos) y se refresca por detrás,
+   así una versión nueva entra sola en la siguiente apertura. */
+async function staleWhileRevalidate(req){
+  const c = await caches.open(CACHE);
+  const cached = await c.match(req, {ignoreSearch:true});
+  const fresh = fetch(new Request(req.url, {cache:'reload'}))
+    .then(res=>{ if(res.ok) c.put(req, res.clone()); return res; })
+    .catch(()=>null);
+  return cached || (await fresh) || fetch(req);
+}
+
 self.addEventListener('fetch', e=>{
-  if(e.request.method !== 'GET') return;
-  const url = e.request.url;
+  const req = e.request;
+  if(req.method !== 'GET') return;
+  const url = req.url;
   if(url.includes('api.open-meteo.com')) return;
-  if(url.includes(MAPFILE)){ e.respondWith(serveMap(e.request)); return; }
+  if(url.includes(MAPFILE)){ e.respondWith(serveMap(req)); return; }
+  if(req.mode === 'navigate' || url.endsWith('/') || url.includes('index.html') || url.includes('pml.js')){
+    e.respondWith(staleWhileRevalidate(req)); return;
+  }
   e.respondWith(
-    caches.match(e.request).then(cached=>{
-      const network = fetch(e.request).then(res=>{
+    caches.match(req).then(cached=>{
+      const network = fetch(req).then(res=>{
         if(res.ok && (url.startsWith(self.location.origin) || url.includes('cdnjs'))){
-          caches.open(CACHE).then(c=>c.put(e.request, res.clone()));
+          caches.open(CACHE).then(c=>c.put(req, res.clone()));
         }
         return res;
       }).catch(()=>cached);

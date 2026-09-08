@@ -58,3 +58,35 @@ Van 44 de 50 paradas; las otras 6 llevan un icono de su categoría.
   visible. Si quieres una real, tiene que ser una foto propia.
 - Wikimedia tira rate limit como a las 8 peticiones seguidas: batchear con
   `titles=A|B|C`. Openverse funciona pero tarda 30-90 s por consulta y falla a ratos.
+
+## Las rutas dentro de los museos
+
+`const MUSEOS` en `index.html` guarda las cuatro rutas internas (9/11, MET, AMNH, MoMA):
+paradas en orden de recorrido, piso y galería, minutos, avisos y qué recortar. Se editan
+con un script (es una línea gigante). El generador vive en el scratchpad de la sesión;
+si hay que rehacerlo, la estructura es:
+
+```python
+{"n11": {"nombre", "parada", "cuando", "min", "color", "tip",
+         "stops":[{"q","d","m","por", "fuera": True}], "avisos":[], "cortar":[]}}
+```
+
+- `parada` debe coincidir **exactamente** con el `name` de la parada del itinerario: de ahí
+  saca la foto del encabezado y ahí aparece el botón "Qué ver adentro".
+- `"fuera": True` marca una parada que no consume el tiempo de adentro (las fuentes del
+  Memorial del 9/11, que son exteriores y gratis).
+- **Los minutos se suman en el render, no a mano** (`sumaMin` / `holgura`). Se hizo así
+  porque el total reportado para el MET no cuadraba con la suma de sus propias paradas.
+
+### Datos con fecha de caducidad — revisar la semana del viaje
+
+- **MET**: rota obras entre galerías. Los números son del 8-sep-2026, de la API oficial de
+  la colección (`collectionapi.metmuseum.org`, filtrando `isOnView=true`) y del mapa
+  `maps.metmuseum.org`. Revisar `metmuseum.org/plan-your-visit/gallery-closures`.
+- **AMNH**: su lista de cierres solo cubre dos semanas y se actualiza cada lunes. El
+  mariposario está cerrado del 8 al 18 de septiembre. Revisar `amnh.org/plan-your-visit/hours`.
+- **MoMA**: rota la colección permanente cada pocos meses. El buscador de `moma.org` dice
+  si una obra está "on view" y en qué galería; el Pollock famoso y la Drowning Girl no lo
+  están.
+- Ni el MET ni el AMNH publican ya un itinerario oficial de "si solo tienes 2 horas": los
+  minutos por parada son estimación, no dato oficial.

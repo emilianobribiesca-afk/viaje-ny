@@ -1,4 +1,4 @@
-const CACHE = 'ny2026-v9';
+const CACHE = 'ny2026-v10';
 const MAPCACHE = 'ny-map-v1';          // el mapa de 20 MB vive aparte: no se borra al actualizar la app
 const MAPFILE = 'ny.pmtiles';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './pml.js',

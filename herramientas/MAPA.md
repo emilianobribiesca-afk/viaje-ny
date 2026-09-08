@@ -35,7 +35,26 @@ pmtiles extract https://build.protomaps.com/AAAAMMDD.pmtiles ny.pmtiles \
 
 ## Las fotos del itinerario
 
-`fotos.json` son las 36 miniaturas 160x160 de Wikimedia Commons, indexadas por el
-campo `name` de cada parada. Van incrustadas en `index.html` como `const FOTOS`.
-Las 9 paradas sin foto llevan un icono de su categoría. Wikimedia tira rate limit
-como a las 8 peticiones seguidas: hay que batchear con `titles=A|B|C`.
+Las miniaturas 160x160 vienen de Wikimedia Commons, indexadas por el campo `name` de
+cada parada, y se integran con:
+
+```bash
+python3 herramientas/integrar_fotos.py herramientas/fotos*.json
+```
+
+Eso regenera `const FOTOS` y `const CREDITOS` en `index.html`, y **falla** si alguna
+clave no corresponde a ninguna parada (así se detecta un nombre mal escrito).
+Van 44 de 50 paradas; las otras 6 llevan un icono de su categoría.
+
+- **Las licencias obligan a atribuir.** Casi todo es CC BY o CC BY-SA, así que la
+  pestaña Info muestra autor y licencia de cada foto. Si agregas fotos, el crédito
+  se genera solo desde el campo `licencia` del JSON.
+- Una foto marcada `"tipo":"tematica"` **no es el lugar**, es ilustrativa (ramen para
+  Tonchin, nigiri para Shiro, café turco para Kahve, porque no existe foto libre de
+  esos locales). El integrador les agrega "foto ilustrativa, no es el lugar" en el
+  crédito; no quitar esa marca.
+- **El hotel no tiene foto a propósito.** En el acervo libre no hay ninguna del Romer
+  Hell's Kitchen; lo único que aparece de esa cuadra es la Octava Avenida sin hotel
+  visible. Si quieres una real, tiene que ser una foto propia.
+- Wikimedia tira rate limit como a las 8 peticiones seguidas: batchear con
+  `titles=A|B|C`. Openverse funciona pero tarda 30-90 s por consulta y falla a ratos.

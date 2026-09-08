@@ -70,6 +70,8 @@ def card(color, place, when, detail, code_img, code_txt, provider, nth, hi=None)
     return im
 
 JUE, VIE, SAB = '#EE352E', '#0039A6', '#00933C'
+BOM_DET = "Eugene O'Neill Theatre, 230 West 49th St. NYC Broadway Week BOGO, $104.50."
+BOM_PROV = 'ATG Tickets · orden 4916404 · jaramillo, emiliano'
 SPEC = {
  'est':[dict(color=JUE, place='Estatua de la Libertad', when='Jueves 17 sep · 9:00 AM (seguridad 8:30)',
              detail='Adult Reserve with Pedestal (13–61) × 5. Una sola confirmación para las 5 personas. El ferry no tiene hora: primero en llegar, primero en subir.',
@@ -103,11 +105,19 @@ SPEC = {
            for i,p in enumerate(['1002011050359449576027','1002011050359394763160','1002011050359357496597',
                                  '1002011050359437114834','1002011050359383613679'],1)],
  'bom':[dict(color=VIE, place='The Book of Mormon', when='Viernes 18 sep · 7:00 PM',
-             hi=seat, detail="Eugene O'Neill Theatre, 230 West 49th St. NYC Broadway Week BOGO, $104.50.",
-             dm=f'dm_{i}.png', code_txt=p, provider="ATG Tickets · orden 4916404 · jaramillo, emiliano", nth=f'Boleto {i+1} de 5')
-        for i,(p,seat) in enumerate([('41831440349','Orchestra Left C 9'),('41831995226','Orchestra Left C 11'),
-                                     ('41832272373','Orchestra Left C 13'),('41831744220','Orchestra Left E 13'),
-                                     ('41831451168','Orchestra Left E 15')])],
+             hi=seat, detail=det,
+             dm=f'dm_{i}.png', code_txt=p, provider=prov, nth=f'Boleto {i+1} de 6')
+        for i,(p,seat,det,prov) in enumerate([
+            ('41831440349','Orchestra Left C 9',  BOM_DET, BOM_PROV),
+            ('41831995226','Orchestra Left C 11', BOM_DET, BOM_PROV),
+            ('41832272373','Orchestra Left C 13', BOM_DET, BOM_PROV),
+            ('41831744220','Orchestra Left E 13', BOM_DET, BOM_PROV),
+            ('41831451168','Orchestra Left E 15', BOM_DET, BOM_PROV),
+            ('41831797527','Orchestra Left E 21',
+             "VISTA PARCIAL: el boleto dice Partial View, se ve parte del escenario tapada. "
+             "Eugene O'Neill Theatre, 230 West 49th St. Tarifa regular, $149.00.",
+             'ATG Tickets · orden 4937619 · el sexto boleto, comprado aparte'),
+        ])],
 }
 
 TIX = {}; fails = []

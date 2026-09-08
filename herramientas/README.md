@@ -1,6 +1,6 @@
 # Generador del wallet de boletos
 
-Rehace las 31 tarjetas de `TIX` y las inyecta en `index.html`. Úsalo cuando cambie
+Rehace las 32 tarjetas de `TIX` y las inyecta en `index.html`. Úsalo cuando cambie
 un boleto; no edites el base64 a mano.
 
 ```
@@ -15,7 +15,9 @@ python3 inject.py     # mete TIX en el maestro y en ../index.html (deja .bak)
 - Los QR se regeneran con `segno` desde el payload exacto. Los DataMatrix no se
   regeneran (no hay generador en la Mac): se recortan a 600 dpi del PDF original.
 - Cecconi's queda como captura: es la única reserva sin código escaneable.
-- Fuentes de verdad: `~/Downloads/` — `tickets.pdf` (BoM), `TicketOrder20260904-49431400.pdf`
+- Fuentes de verdad: `~/Downloads/` — `tickets.pdf` (los 5 primeros de BoM),
+  `bom-boleto-extra.pdf` (el sexto de BoM, orden 4937619, vista parcial),
+  `TicketOrder20260904-49431400.pdf`
   (Summit), `Print Tickets | The Metropolitan Museum of Art.pdf` (MET),
   `91CG28ZLV26Y3B3HWTC1EBUFUE1T75L2.pdf` (9/11), `IMG_7277.PNG` (Estatua),
   `IMG_7280–7282.PNG` (AMNH), `IMG_7283–7287.PNG` (MoMA).

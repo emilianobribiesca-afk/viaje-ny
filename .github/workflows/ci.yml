@@ -1,0 +1,52 @@
+name: CI
+
+# Valida el maestro en cada push. No publica: GitHub Pages ya sirve la rama main
+# directamente, y ese mecanismo se deja como está.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  valida:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validar index.html, boletos y fotos
+        run: python3 herramientas/valida.py
+
+      # El service worker es cache-first: sin subir la versión de CACHE, los
+      # celulares que ya instalaron la PWA se quedan con la versión vieja.
+      - name: La versión del service worker subió si cambió la app
+        run: |
+          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+            echo "Primer commit: nada que comparar."; exit 0
+          fi
+          cambios=$(git diff --name-only HEAD~1 HEAD -- index.html pml.js manifest.json)
+          if [ -z "$cambios" ]; then
+            echo "La app no cambió; no hace falta subir la versión."; exit 0
+          fi
+          echo "Cambió: $cambios"
+          antes=$(git show HEAD~1:sw.js | grep -oE "ny2026-v[0-9]+" | head -1)
+          ahora=$(grep -oE "ny2026-v[0-9]+" sw.js | head -1)
+          if [ "$antes" = "$ahora" ]; then
+            echo "::error::La app cambió pero CACHE sigue en $ahora. Súbela en sw.js o la actualización no llega a los celulares."
+            exit 1
+          fi
+          echo "CACHE $antes -> $ahora"
+
+      - name: El sitio publicado responde
+        if: github.ref == 'refs/heads/main'
+        run: |
+          url=https://emilianobribiesca-afk.github.io/viaje-ny/
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$url")
+          echo "$url -> $code"
+          [ "$code" = "200" ]

@@ -1,0 +1,16 @@
+Copyright © 2026 Emiliano Bribiesca. Todos los derechos reservados.
+
+Esta aplicación (el código HTML, CSS y JavaScript, los planos de museos y el
+itinerario) es obra propia y de uso familiar. No se autoriza su redistribución
+ni su uso comercial sin permiso por escrito.
+
+Material de terceros incluido, que conserva su propia licencia:
+
+- Fotografías del itinerario: Wikimedia Commons, en su mayoría Creative Commons
+  (CC BY, CC BY-SA, CC0) o dominio público. La atribución de cada una está en la
+  pestaña Info de la app.
+- Datos del mapa (ny.pmtiles): OpenStreetMap, bajo Open Database License (ODbL).
+  © colaboradores de OpenStreetMap. Empaquetado con Protomaps.
+- Bibliotecas: Leaflet y protomaps-leaflet (BSD), segno (LGPL, solo en las
+  herramientas de generación).
+- Los boletos, códigos de reserva y confirmaciones pertenecen a sus emisores.
